@@ -1,0 +1,52 @@
+# Here is the sample boilerplate code and a dataframe for your reference.
+
+# Code for creating sparksession:
+
+from pysaprk.sql import SparkSession
+import getpass
+username = getpass.getuser()
+spark = SparkSession.builder.config('spark.ui.port', '0').config("spark.sql.warehouse.dir", f"/user/{username}/warehouse").enableHivesupport().master('yarn').getorCreate()
+
+# Here is the sample Dataframe to work with:
+
+from pyspark.sql import SparkSession
+from pyspark.sql import Row
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DoubleType
+from pysaprk.sql.functions import *
+
+# Create the SparkSession
+spark = SparkSession.builder.getOrCreate()
+
+# Define the data
+
+data =  [Row(1, "John", 30, "Sales", 50000.0),
+         Row(2, "Alice", 28, "Marketing", 60000.0),
+         Row(3, "Bob", 32, "Finance", 55000.0),
+         Row(4, "Sarah", 29, "Sales", 52000.0),
+         Row(5, "Mike", 31, "Finance", 58000.0)
+]
+
+# Define the schema
+
+schema = StructType([StructField("id", IntegerType(), nullable=False),
+                     StructField("name", StringType(), nullable=False),
+                     StructField("age", IntegerType(), nullable=False),
+                     StructField("department", IntegerType(), nullable=False),
+                     StructField("salary", DoubleType(), nullable=False)])
+
+# Create the Dataframe
+
+employeeDF = spark.createDataframe(data, schema)
+
+# show the dataFrame
+
+employeeDF.show()
+
+
+# Question 1:
+# Calculate the average salary for each department:
+
+avgSalbyDept =employeeDF.groupBy("department").agg(avg("salary").alias("avergae_sal_by_dept"))
+
+avgSalbyDept.show()
+
