@@ -61,3 +61,79 @@ def find_duplicates_sorted(myList):
 find_duplicates_sorted(mylist)
 
 
+2. Sorting elements in the list
+
+my_list = [5,8,9,6,3]
+
+# method-1
+for i in range(len(my_list)):
+
+    min_index = i
+    for j in range(i+1, len(my_list)):
+        if my_list[j] < my_list[min_index]:
+            my_list[i], my_list[j] = my_list[j], my_list[i]
+print(my_list)
+ 
+
+# method-2
+my_list = [2,5,7,5,3,4,5,2]
+ass = []
+
+while my_list:
+    minimum = my_list[0]
+    for i in my_list:
+        if i < minimum:
+            minimum = i
+    ass.append(minimum)
+    my_list.remove(minimum)
+print(ass)
+
+
+%Pyspark
+# Write a PySpark job to join two large datasets with skew handling.
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, rand, lit, when
+import getpass
+
+username = getpass.getuser()
+spark = SparkSession.builder \
+    .config('spark.ui.port', '0') \
+    .config("spark.sql.warehouse.dir", f"/user/{username}/warehouse") \
+    .enableHiveSupport() \
+    .master('yarn') \
+    .getOrCreate()
+
+# Load Datasets
+orders = spark.read.parquet("s3://path/to/orders")
+customers = spark.read.parquet("s3://path/to/customers")
+
+# Step 1: Identify skewed keys
+skew_threshold = 10000
+skewed_keys = orders.groupBy("customer_id") \
+                    .count() \
+                    .filter(col("count") > skew_threshold) \
+                    .select("customer_id") \
+                    .rdd.flatMap(lambda x: x) \
+                    .collect()
+
+# Step 2: Salt the skewed keys in orders
+def salt_orders(df, skewed_keys, n_salt=10):
+    salted_df = df.withColumn(
+        "salted_key",
+        when(
+            col("customer_id").isin(skewed_keys),
+            col("customer_id").cast("string") + "_" + (rand() * n_salt).cast("int").cast("string")
+        ).otherwise(col("customer_id").cast("string"))
+    )
+    return salted_df
+
+orders_salted = salt_orders(orders, skewed_keys)
+customers_salted = customers.withColumn("salted_key", col("customer_id").cast("string"))
+
+# Step 3: Join on salted key
+joined_df = orders_salted.join(customers_salted, "salted_key", "inner").drop("salted_key")
+
+# Step 4: Write results
+joined_df.write.mode("overwrite").parquet("s3://path/to/joined_result")
+
