@@ -1,0 +1,63 @@
+%sql
+1.Find duplicate records in a table (Amazon)
+
+select customer_id, order_date, count(*) AS cnt
+from orders
+group by customer_id, order_date
+having count(*) >1;
+
+2.Retrieve the second highest salary from Employee table ()
+
+select max(salary) AS SecondHighestSalary
+from employee
+where salary < (select max(salary) from employee);
+
+3.Find employees without department (Uber)
+select employee_id from employees
+where department is null;
+
+4.Find employees without department
+select e.* 
+from eployee
+left join department d ON e.department_id = d.departmnet_id
+where d.departmnet_id is null;
+
+5.Calculate the total revenue per product (PayPal)
+select product_id, SUM(quantity * price) as total_revenue
+from Sales
+GROUP BY product_id;
+
+
+6.Get the top 3 highest-paid employees (Google)
+select TOP 3 *
+from employee
+Group by salary desc;
+
+7.Customers who made purchases but never returned products (Walmart)
+select distinct c.customer_id
+from customers c
+join orders o ON c.customer_id = o.customer_id
+where c.customer_id not in (select customer_id from Returns):
+
+
+
+%Python
+1.find dublicate value and sort in accending order
+
+mylist = [2,5,7,5,3,4,5,2]
+
+def find_duplicates_sorted(myList):
+    seen = set()
+    duplicates = set()
+
+    for i in myList:
+        if i in seen:
+            duplicates.add(i)
+        else:
+            seen.add(i)
+
+    return sorted(duplicates)
+
+find_duplicates_sorted(mylist)
+
+
